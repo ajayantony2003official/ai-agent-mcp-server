@@ -35,6 +35,52 @@ function resolveStageId({ args = {}, message = "", runtimeContext = {} }) {
     return normalizeStageId(runtimeContext.selected_stage_id);
 }
 
+function resolveReminderAuditPayload(args = {}) {
+    return (
+        args.auditPayload ||
+        args.auditObj ||
+        args.audit_obj ||
+        args.auditPayloadData ||
+        null
+    );
+}
+
+function buildReminderArgs(nextArgs, stageId, runtimeContext = {}) {
+    const auditPayload = resolveReminderAuditPayload(nextArgs);
+
+    if (auditPayload) {
+        if (nextArgs.auditPayload === undefined) {
+            nextArgs.auditPayload = auditPayload;
+        }
+
+        if (nextArgs.auditObj === undefined) {
+            nextArgs.auditObj = auditPayload;
+        }
+    }
+
+    if (stageId && nextArgs.stageId === undefined) {
+        nextArgs.stageId = stageId;
+    }
+
+    if (nextArgs.userId === undefined) {
+        nextArgs.userId = runtimeContext.user_id || runtimeContext.userId || null;
+    }
+
+    if (nextArgs.fcmToken === undefined) {
+        nextArgs.fcmToken =
+            runtimeContext.fcm_token ||
+            runtimeContext.fcmToken ||
+            runtimeContext.firebase_token ||
+            null;
+    }
+
+    if (!nextArgs.title) {
+        nextArgs.title = "Lead follow-up reminder";
+    }
+
+    return nextArgs;
+}
+
 function buildToolArgs({
     toolCall,
     args = {},
@@ -51,7 +97,7 @@ function buildToolArgs({
 
     if (
         stageId &&
-        ["getFilters", "getStageLeads", "getAuditForm"].includes(toolCall.name) &&
+        ["getFilters", "getStageLeads", "getAuditForm", "setReminder"].includes(toolCall.name) &&
         nextArgs.stageId === undefined
     ) {
         nextArgs.stageId = stageId;
@@ -67,6 +113,10 @@ function buildToolArgs({
                 ...(nextArgs.filters || {})
             };
         }
+    }
+
+    if (toolCall.name === "setReminder") {
+        buildReminderArgs(nextArgs, stageId, runtimeContext);
     }
 
     return nextArgs;

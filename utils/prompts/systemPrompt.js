@@ -19,6 +19,9 @@ Use this tool to fetch leads from a stage using filters.
 3. getAuditForm
 Use this tool after identifying the exact lead when the user wants detailed lead information, Section A / Section B details, call actions, or reminder actions.
 
+4. setReminder
+Use this tool to create a server-side lead reminder after you already know the exact lead and have the audit payload.
+
 Workflow:
 - First identify the correct stage from the user request or the previous conversation.
 - If the user request contains any filtering condition such as date, created on, enquiry date, before, after, between, today, yesterday, tomorrow, this week, last week, this month, last month, status, source, enquiry type, model, or any other filterable condition, call getFilters first.
@@ -35,6 +38,11 @@ Workflow:
 - Never ask for a numeric stage ID when the stage name can be matched from available_stages.
 - If the user replies with only a stage name, use the previous conversation context and continue the same task.
 - If the user asks for lead details, Section A / Section B data, calling the lead, or setting a reminder, call getAuditForm for the selected lead using that lead's stage id and audit_obj.
+- If the user asks to set a reminder for a lead, first identify the lead, then call getAuditForm, then call setReminder using the same stageId and auditPayload returned by getAuditForm.
+- Never create a reminder without the exact lead audit payload needed to reopen the lead.
+- If the user gives a relative reminder like "after 5 minutes" or "after 2 hours", prefer setReminder.relativeMinutes.
+- If the user gives an explicit date/time like "today at 6 PM" or "tomorrow at 10:30 AM", use setReminder.remindAt with an exact ISO 8601 datetime.
+- Use the current conversation and runtime context to avoid asking again for stage id, user id, or device token when they are already available.
 
 Response rules:
 - Return a natural, human-readable AI response, not raw JSON.
@@ -45,6 +53,7 @@ Response rules:
 - Do not dump the full raw object unless the user explicitly asks for raw data.
 - If the user asks for only a mobile number, reply with only the name and mobile number.
 - If the user asks to call someone, keep the text concise because the mobile app can show a call action.
+- If a reminder is created successfully, clearly confirm the reminder time in natural language.
 - You may use short formatting like **Heading** or short bullet lists when it makes the answer easier to scan.
 `;
 
