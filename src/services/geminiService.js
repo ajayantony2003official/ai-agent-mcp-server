@@ -1,5 +1,5 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const { toolRegistry } = require("../llm/toolRegistry");
+const { toolRegistry } = require("../../llm/toolRegistry");
 const { SYSTEM_PROMPT } = require("../utils/prompts/systemPrompt");
 
 let genAI = null;

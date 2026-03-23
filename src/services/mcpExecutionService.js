@@ -1,4 +1,4 @@
-const { callMCP } = require("../clients/mcpClient");
+const { callMCP } = require("../../clients/mcpClient");
 const { inferFiltersFromMessage } = require("../utils/filterInference");
 const { findMatchedStage } = require("../utils/messageUtils");
 
