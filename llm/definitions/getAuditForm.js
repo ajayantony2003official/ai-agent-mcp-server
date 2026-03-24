@@ -6,6 +6,7 @@ Fetch full audit form details for a given lead.
 IMPORTANT:
 - From the API response, ONLY return "Section A" and "Section B" for UI rendering.
 - Include the same audit payload and stage id in the tool result so mobile can open the audit form, call the lead, or schedule reminders.
+- Also include communication action availability and template lists for Email/SMS when present so the agent can guide template sending.
 - Ignore all remaining sections when preparing the AI-facing response.
 `,
     parameters: {

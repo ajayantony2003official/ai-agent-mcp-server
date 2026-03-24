@@ -11,6 +11,15 @@ function normalizeStageId(value) {
     return Number.isFinite(numericValue) ? numericValue : null;
 }
 
+function readText(value) {
+    if (value === undefined || value === null) {
+        return null;
+    }
+
+    const text = String(value).trim();
+    return text.length ? text : null;
+}
+
 function resolveStageId({ args = {}, message = "", runtimeContext = {} }) {
     const explicitStageId = normalizeStageId(args.stageId);
     if (explicitStageId) {
@@ -42,6 +51,18 @@ function resolveReminderAuditPayload(args = {}) {
         args.audit_obj ||
         args.auditPayloadData ||
         null
+    );
+}
+
+function resolveTransUniqueId({ args = {}, runtimeContext = {} }) {
+    const auditPayload = resolveReminderAuditPayload(args);
+
+    return (
+        readText(args.transUniqueId) ||
+        readText(args.trans_unique_id) ||
+        readText(auditPayload?.Trans_Unique_Id) ||
+        readText(auditPayload?.trans_unique_id) ||
+        readText(runtimeContext.trans_unique_id)
     );
 }
 
@@ -81,6 +102,57 @@ function buildReminderArgs(nextArgs, stageId, runtimeContext = {}) {
     return nextArgs;
 }
 
+function buildTemplateArgs(nextArgs, stageId, runtimeContext = {}) {
+    if (stageId && nextArgs.stageId === undefined) {
+        nextArgs.stageId = stageId;
+    }
+
+    const transUniqueId = resolveTransUniqueId({
+        args: nextArgs,
+        runtimeContext
+    });
+
+    if (
+        transUniqueId &&
+        nextArgs.transUniqueId === undefined &&
+        nextArgs.trans_unique_id === undefined
+    ) {
+        nextArgs.transUniqueId = transUniqueId;
+    }
+
+    if (nextArgs.templateName === undefined) {
+        nextArgs.templateName =
+            nextArgs.template_name ||
+            nextArgs.template ||
+            null;
+    }
+
+    if (nextArgs.type === undefined) {
+        nextArgs.type =
+            nextArgs.channel ||
+            nextArgs.templateType ||
+            nextArgs.communicationType ||
+            null;
+    }
+
+    const normalizedType = readText(nextArgs.type)?.toLowerCase();
+    if (normalizedType) {
+        nextArgs.type = normalizedType;
+    }
+
+    if (nextArgs.toAddress === undefined) {
+        nextArgs.toAddress =
+            nextArgs.toNumber ||
+            nextArgs.to_number ||
+            nextArgs.recipient ||
+            nextArgs.email ||
+            nextArgs.address ||
+            null;
+    }
+
+    return nextArgs;
+}
+
 function buildToolArgs({
     toolCall,
     args = {},
@@ -97,7 +169,14 @@ function buildToolArgs({
 
     if (
         stageId &&
-        ["getFilters", "getStageLeads", "getAuditForm", "setReminder"].includes(toolCall.name) &&
+        [
+            "getFilters",
+            "getStageLeads",
+            "getAuditForm",
+            "setReminder",
+            "getTemplateData",
+            "submitTemplateData"
+        ].includes(toolCall.name) &&
         nextArgs.stageId === undefined
     ) {
         nextArgs.stageId = stageId;
@@ -117,6 +196,10 @@ function buildToolArgs({
 
     if (toolCall.name === "setReminder") {
         buildReminderArgs(nextArgs, stageId, runtimeContext);
+    }
+
+    if (["getTemplateData", "submitTemplateData"].includes(toolCall.name)) {
+        buildTemplateArgs(nextArgs, stageId, runtimeContext);
     }
 
     return nextArgs;
